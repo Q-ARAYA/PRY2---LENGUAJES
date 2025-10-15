@@ -6,7 +6,7 @@ import System.IO (hFlush, stdout)
 
 -- import Archivos
 import Importacion (solicitarNombreArchivo)
--- import Procesamiento
+import Procesamiento (menuProcesamiento)
 -- import Analisis
 -- import Temporal
 -- import Estadisticasss
@@ -42,7 +42,7 @@ menuLoop ventas = do
 
         "2" -> do
             putStrLn "\n[Procesamiento de datos seleccionado]"
-            -- procesamientoDatos ventas
+            menuProcesamiento
             menuLoop ventas
 
         "3" -> do
