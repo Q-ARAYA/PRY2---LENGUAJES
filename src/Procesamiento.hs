@@ -11,7 +11,8 @@ import qualified Data.Set as Set
 import Data.List (foldl')
 import System.Directory (renameFile, removeFile)
 import qualified Data.Map.Strict as Map
-import Data.List (maximumBy)
+import Data.List (maximumBy, sort)
+
 import Data.Ord (comparing)
 
 
@@ -93,10 +94,46 @@ menuCompletarDatos = do
             menuCompletarDatos
         "2" -> do
             putStrLn "\nCompletar por la media seleccionado"
-            menuCompletarDatos
+            
+            contenido <- B.readFile "ventas.json"
+            let ventas = case decode contenido :: Maybe [Venta] of
+                            Just v -> v
+                            Nothing -> []
+
+            let (mediaCant, mediaPrecio) = calcularMediaCantidadPrecio ventas
+
+            let (ventasMod, idsModificados) = modificarVentas mediaCant mediaPrecio ventas
+
+            let archivoTemp = "temp.json"
+            B.writeFile archivoTemp (encode ventasMod)
+            removeFile "ventas.json"
+            renameFile archivoTemp "ventas.json"
+
+            if null idsModificados
+            then putStrLn "No se modificaron registros."
+            else putStrLn $ "Ventas modificadas. IDs: " ++ show idsModificados
+
 
         "3" -> do
             putStrLn "\nCompletar por el mediana seleccionado"
+
+            contenido <- B.readFile "ventas.json"
+            let ventas = case decode contenido :: Maybe [Venta] of
+                            Just v -> v
+                            Nothing -> []
+
+            let (medianaCant, medianaPrecio) = calcularMedianaCantidadPrecio ventas
+
+            let (ventasMod, idsModificados) = modificarVentas medianaCant medianaPrecio ventas
+
+            let archivoTemp = "temp.json"
+            B.writeFile archivoTemp (encode ventasMod)
+            removeFile "ventas.json"
+            renameFile archivoTemp "ventas.json"
+
+            if null idsModificados
+            then putStrLn "No se modificaron registros."
+            else putStrLn $ "Ventas modificadas. IDs: " ++ show idsModificados
             menuCompletarDatos
 
         "6" -> do
@@ -158,3 +195,39 @@ calcularModaCantidadPrecio ventas =
         modaCantidad = moda cantidadesValidas
         modaPrecio   = moda preciosValidos
     in (modaCantidad, modaPrecio)
+
+calcularMediaCantidadPrecio :: [Venta] -> (Int, Double)
+calcularMediaCantidadPrecio ventas =
+    let cantidadesValidas = [cantidad v | v <- ventas, cantidad v /= 0]
+        preciosValidos    = [precio_unitario v | v <- ventas, precio_unitario v /= 0]
+
+        mediaCantidad = if null cantidadesValidas
+                        then 0
+                        else round $ fromIntegral (sum cantidadesValidas) / fromIntegral (length cantidadesValidas)
+
+        mediaPrecio   = if null preciosValidos
+                        then 0
+                        else sum preciosValidos / fromIntegral (length preciosValidos)
+    in (mediaCantidad, mediaPrecio)
+
+
+calcularMedianaCantidadPrecio :: [Venta] -> (Int, Double)
+calcularMedianaCantidadPrecio ventas =
+    let cantidadesValidas = sort [cantidad v | v <- ventas, cantidad v /= 0]
+        preciosValidos    = sort [precio_unitario v | v <- ventas, precio_unitario v /= 0]
+
+        mediana xs
+          | null xs   = 0
+          | odd n     = xs !! (n `div` 2)
+          | otherwise = let mid = n `div` 2
+                        in round $ (fromIntegral (xs !! (mid - 1) + xs !! mid)) / 2
+          where n = length xs
+
+        medianaCantidad = mediana cantidadesValidas
+        medianaPrecio   = if null preciosValidos
+                          then 0
+                          else let n = length preciosValidos
+                               in if odd n
+                                  then preciosValidos !! (n `div` 2)
+                                  else (preciosValidos !! (n `div` 2 - 1) + preciosValidos !! (n `div` 2)) / 2
+    in (medianaCantidad, medianaPrecio)
