@@ -1,16 +1,19 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Importacion (solicitarNombreArchivo) where
+module Importacion
+  ( Venta(..)
+  , importarVentas
+  ) where
 
 import System.IO
-import System.Directory (doesFileExist, renameFile)
+import System.Directory (doesFileExist)
 import Data.Aeson
 import GHC.Generics
 import qualified Data.ByteString.Lazy as B
 import Control.Monad (when)
 
-
+-- Se define el tipo de venta
 data Venta = Venta
   { venta_id :: Int
   , fecha :: String
@@ -25,66 +28,62 @@ data Venta = Venta
 instance FromJSON Venta
 instance ToJSON Venta
 
--- Función principal
-solicitarNombreArchivo :: IO ()
-solicitarNombreArchivo = do
-  putStr "Nombre del archivo JSON de entrada: "
-  hFlush stdout
-  nombreArchivo <- getLine
-  procesarVentas nombreArchivo
-
-procesarVentas :: FilePath -> IO ()
-procesarVentas archivoEntrada = do
-  -- Verificar que el archivo de entrada exista
+-- Funcion principal de importación de datos
+-- Entradas: ruta del archivo json, lista actual de ventas en memoria
+-- Salida: lista nueva de ventas en memoria
+-- Restricciones: el archivo debe existir y tener formato JSON valido,
+--               ademas tiene se implementaron funciones auxiliares para validar los datos
+importarVentas :: FilePath -> [Venta] -> IO [Venta]
+importarVentas archivoEntrada ventasExistentes = do
   existe <- doesFileExist archivoEntrada
   if not existe
-    then putStrLn "El archivo especificado no existe."
+    then do
+      putStrLn "El archivo especificado no existe."
+      return ventasExistentes
     else do
-      -- Leer archivo JSON de entrada
       contenido <- B.readFile archivoEntrada
       let ventasNuevas = decode contenido :: Maybe [Venta]
 
       case ventasNuevas of
-        Nothing -> putStrLn "Error: el archivo no tiene formato JSON válido o la estructura no coincide."
+        Nothing -> do
+          putStrLn "Error: el archivo no tiene formato JSON válido o la estructura no coincide."
+          return ventasExistentes
         Just nuevas -> do
           let (validas, invalidas) = validarVentas nuevas
+              ventasActualizadas = ventasExistentes ++ validas
 
-          -- Leer ventas existentes
-          existeVentas <- doesFileExist "ventas.json"
-          ventasExistentes <- if existeVentas
-            then do
-              contenidoViejo <- B.readFile "ventas.json"
-              let decoded = decode contenidoViejo :: Maybe [Venta]
-              return (maybe [] id decoded)
-            else return []
-
-          let ventasActualizadas = ventasExistentes ++ validas
-
-          -- Escribir en archivo temporal y luego renombrar
-          let archivoTemp = "ventas_temp.json"
-          B.writeFile archivoTemp (encode ventasActualizadas)
-          renameFile archivoTemp "ventas.json"
-
-          putStrLn $ "Se agregaron " ++ show (length validas) ++ " ventas correctamente."
+          putStrLn $ "\nSe agregaron " ++ show (length validas) ++ " ventas válidas."
           when (not (null invalidas)) $ do
-            putStrLn "Se encontraron registros inválidos (faltan atributos o valores vacíos):"
-            mapM_ print invalidas
+            putStrLn $ "\nSe encontraron " ++ show (length invalidas) ++ " registros inválidos:\n"
+            mapM_ reportarErrorVenta invalidas
+
+          return ventasActualizadas
+
+-- separa las ventas válidas de las inválidas
+-- ademas de generar una lista de errores para cada venta inválida
+validarVentas :: [Venta] -> ([Venta], [(Venta, [String])])
+validarVentas = foldr
+  (\v (ok, err) ->
+      let errores = erroresDeVenta v
+      in if null errores
+            then (v : ok, err)
+            else (ok, (v, errores) : err))
+  ([], [])
 
 
--- Validar que tengan valores válidos
-validarVentas :: [Venta] -> ([Venta], [Venta])
-validarVentas = foldr (\v (ok, err) ->
-  if camposCompletos v
-     then (v:ok, err)
-     else (ok, v:err)) ([], [])
+erroresDeVenta :: Venta -> [String]
+erroresDeVenta v = concat
+  [ if null (fecha v) then ["Campo 'fecha' vacío"] else []
+  , if null (producto_nombre v) then ["Campo 'producto_nombre' vacío"] else []
+  , if null (categoria v) then ["Campo 'categoria' vacío"] else []
+  , if cantidad v < 0 then ["'cantidad' debe ser mayor que 0"] else []
+  , if precio_unitario v < 0 then ["'precio_unitario' no puede ser negativo"] else []
+  , if total v < 0 then ["'total' no puede ser negativo"] else []
+  ]
 
-camposCompletos :: Venta -> Bool
-camposCompletos v =
-  not (null (fecha v)
-    || null (producto_nombre v)
-    || null (categoria v))
-  && venta_id v > 0
-  && producto_id v > 0
-  && cantidad v > 0
-  && precio_unitario v > 0
-  && total v >= 0
+
+reportarErrorVenta :: (Venta, [String]) -> IO ()
+reportarErrorVenta (v, errores) = do
+  putStrLn $ "Venta inválida (ID: " ++ show (venta_id v) ++ "):"
+  mapM_ (\e -> putStrLn $ "  - " ++ e) errores
+  putStrLn ""
