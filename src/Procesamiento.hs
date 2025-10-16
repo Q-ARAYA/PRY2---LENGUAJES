@@ -12,7 +12,6 @@ import Data.List (foldl')
 import System.Directory (renameFile, removeFile)
 import qualified Data.Map.Strict as Map
 import Data.List (maximumBy, sort)
-
 import Data.Ord (comparing)
 
 
@@ -42,12 +41,12 @@ menuProcesamiento = do
     opcion <- getLine
     case opcion of
         "1" -> do
-            putStrLn "\nCompletar datos faltantes seleccionado"
+            putStrLn "\n--- Completar datos faltantes seleccionado ---"
             menuCompletarDatos
             menuProcesamiento 
 
         "2" -> do
-            putStrLn "\nEliminar duplicados seleccionado"
+            putStrLn "\n--- Eliminar duplicados seleccionado ---"
             eliminarDuplicados "ventas.json"
             menuProcesamiento
 
@@ -56,7 +55,7 @@ menuProcesamiento = do
             
 
         _   -> do
-            putStrLn "\nOpción inválida. Intente de nuevo."
+            putStrLn "\nXXX Opción inválida. Intente de nuevo. XXX"
             menuProcesamiento 
 
 menuCompletarDatos :: IO ()
@@ -71,7 +70,7 @@ menuCompletarDatos = do
     opcion <- getLine
     case opcion of
         "1" -> do
-            putStrLn "\nCompletar por la moda seleccionado"
+            putStrLn "\n--- Completar por la moda seleccionado ---"
  
             contenido <- B.readFile "ventas.json"
             let ventas = case decode contenido :: Maybe [Venta] of
@@ -93,7 +92,7 @@ menuCompletarDatos = do
 
             menuCompletarDatos
         "2" -> do
-            putStrLn "\nCompletar por la media seleccionado"
+            putStrLn "\n--- Completar por la media seleccionado ---"
             
             contenido <- B.readFile "ventas.json"
             let ventas = case decode contenido :: Maybe [Venta] of
@@ -115,7 +114,7 @@ menuCompletarDatos = do
 
 
         "3" -> do
-            putStrLn "\nCompletar por el mediana seleccionado"
+            putStrLn "\n--- Completar por el mediana seleccionado ---"
 
             contenido <- B.readFile "ventas.json"
             let ventas = case decode contenido :: Maybe [Venta] of
@@ -140,7 +139,7 @@ menuCompletarDatos = do
             putStrLn "\n.."
 
         _   -> do
-            putStrLn "\nOpción inválida. Intente de nuevo."
+            putStrLn "\nXXX Opción inválida. Intente de nuevo. XXX"
             menuCompletarDatos 
 
 

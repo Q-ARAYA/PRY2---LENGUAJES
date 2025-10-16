@@ -7,7 +7,7 @@ import System.IO (hFlush, stdout)
 -- import Archivos
 import Importacion (solicitarNombreArchivo)
 import Procesamiento (menuProcesamiento)
--- import Analisis
+import Analisis (menuAnalisis)
 -- import Temporal
 -- import Estadisticasss
 
@@ -35,28 +35,28 @@ menuLoop ventas = do
     opcion <- getLine
     case opcion of
         "1" -> do
-            putStrLn "\n[Importación de datos seleccionadaaa]"
+            putStrLn "\n--- Importación de datos seleccionada ---"
             solicitarNombreArchivo
             let nuevasVentas = ventas ++ ["EjemploVenta"]
             menuLoop nuevasVentas
 
         "2" -> do
-            putStrLn "\n[Procesamiento de datos seleccionado]"
+            putStrLn "\n--- Procesamiento de datos seleccionado ---"
             menuProcesamiento
             menuLoop ventas
 
         "3" -> do
-            putStrLn "\n[Análisis de datos seleccionado]"
-            -- analisisDatos ventas
+            putStrLn "\n--- Análisis de datos seleccionado ---"
+            menuAnalisis
             menuLoop ventas
 
         "4" -> do
-            putStrLn "\n[Análisis temporal seleccionado]"
+            putStrLn "\n--- Análisis temporal seleccionado ---"
             -- analisisTemporal ventas
             menuLoop ventas
 
         "5" -> do
-            putStrLn "\n[Estadísticas seleccionadas]"
+            putStrLn "\n--- Estadísticas seleccionadas ---"
             -- estadisticasMenu ventas
             menuLoop ventas
 
@@ -65,5 +65,5 @@ menuLoop ventas = do
             putStrLn "Gracias por usar el sistema de análisis de ventas."
 
         _   -> do
-            putStrLn "\nOpción inválida. Intente de nuevo."
+            putStrLn "\nXXX Opción inválida. Intente de nuevo. XXX"
             menuLoop ventas
