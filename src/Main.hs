@@ -37,7 +37,7 @@ menuLoop ventas = do
 
     case opcion of
         "1" -> do
-            putStrLn "\n--- Importación de datos seleccionada ---"
+            putStrLn "\n--- Importación de datos ---"
             putStr "Ingrese el nombre del archivo JSON: "
             hFlush stdout
             ruta <- getLine
@@ -48,28 +48,28 @@ menuLoop ventas = do
             menuLoop nuevasVentas
 
         "2" -> do
-            putStrLn "\n--- Procesamiento de datos seleccionado ---"
+            putStrLn "\n--- Procesamiento de datos ---"
             nuevasVentas <- menuProcesamiento ventas
             imprimirVentas nuevasVentas
             menuLoop nuevasVentas
 
         "3" -> do
-            putStrLn "\n--- Análisis de datos seleccionado ---"
-            -- menuAnalisis ventas
+            putStrLn "\n--- Análisis de datos ---"
+            menuAnalisis ventas
             menuLoop ventas
 
         "4" -> do
-            putStrLn "\n--- Análisis temporal seleccionado ---"
+            putStrLn "\n--- Análisis temporal ---"
             -- analisisTemporal ventas
             menuLoop ventas
 
         "5" -> do
-            putStrLn "\n--- Búsqueda de ventas seleccionada ---"
+            putStrLn "\n--- Búsqueda de ventas ---"
             -- busquedaVentas ventas
             menuLoop ventas
 
         "6" -> do
-            putStrLn "\n--- Estadísticas seleccionadas ---"
+            putStrLn "\n--- Estadísticas ---"
             -- estadisticasMenu ventas
             menuLoop ventas
 
