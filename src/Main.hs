@@ -49,8 +49,9 @@ menuLoop ventas = do
 
         "2" -> do
             putStrLn "\n--- Procesamiento de datos seleccionado ---"
-            -- menuProcesamiento ventas
-            menuLoop ventas
+            nuevasVentas <- menuProcesamiento ventas
+            imprimirVentas nuevasVentas
+            menuLoop nuevasVentas
 
         "3" -> do
             putStrLn "\n--- Análisis de datos seleccionado ---"

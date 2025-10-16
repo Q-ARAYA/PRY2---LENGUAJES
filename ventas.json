@@ -1,1 +1,22 @@
-[{"cantidad":2,"categoria":"Electronica","fecha":"2023-01-04","precio_unitario":250,"producto_id":109,"producto_nombre":"Camara","total":500,"venta_id":1},{"cantidad":1,"categoria":"Electronica","fecha":"2023-01-12","precio_unitario":500,"producto_id":106,"producto_nombre":"Telefono","total":500,"venta_id":2},{"cantidad":2,"categoria":"Electronica","fecha":"2023-01-04","precio_unitario":250,"producto_id":109,"producto_nombre":"Camara","total":500,"venta_id":1}]
+[
+    {
+        "cantidad": 2,
+        "categoria": "Electronica",
+        "fecha": "2023-01-04",
+        "precio_unitario": 250,
+        "producto_id": 109,
+        "producto_nombre": "Camara",
+        "total": 500,
+        "venta_id": 1
+    },
+    {
+        "cantidad": 1,
+        "categoria": "Electronica",
+        "fecha": "2023-01-12",
+        "precio_unitario": 500,
+        "producto_id": 106,
+        "producto_nombre": "Telefono",
+        "total": 500,
+        "venta_id": 2
+    }
+]

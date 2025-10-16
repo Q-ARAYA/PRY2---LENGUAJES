@@ -1,37 +1,15 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE OverloadedStrings #-}
-
 module Procesamiento where
 
 import System.IO (hFlush, stdout)
-import Data.Aeson
-import GHC.Generics
-import qualified Data.ByteString.Lazy as B
-import qualified Data.Set as Set
-import Data.List (foldl')
-import System.Directory (renameFile, removeFile)
-import qualified Data.Map.Strict as Map
-import Data.List (maximumBy, sort)
+import Data.List (foldl', sort, maximumBy)
 import Data.Ord (comparing)
+import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
+import Importacion (Venta(..))
 
 
-data Venta = Venta
-  { venta_id        :: Int
-  , fecha           :: String
-  , producto_id     :: Int
-  , producto_nombre :: String
-  , categoria       :: String
-  , cantidad        :: Int
-  , precio_unitario :: Double
-  , total           :: Double
-  } deriving (Show, Generic)
-
-instance FromJSON Venta
-instance ToJSON Venta where
-
-
-menuProcesamiento :: IO ()
-menuProcesamiento = do
+menuProcesamiento :: [Venta] -> IO [Venta]
+menuProcesamiento ventas = do
     putStrLn "\n--- PROCESAMIENTO DE DATOS ---"
     putStrLn "1. Completar datos faltantes"
     putStrLn "2. Eliminar duplicados"
@@ -41,125 +19,68 @@ menuProcesamiento = do
     opcion <- getLine
     case opcion of
         "1" -> do
-            putStrLn "\n--- Completar datos faltantes seleccionado ---"
-            menuCompletarDatos
-            menuProcesamiento 
+            ventasMod <- menuCompletarDatos ventas
+            menuProcesamiento ventasMod
 
         "2" -> do
-            putStrLn "\n--- Eliminar duplicados seleccionado ---"
-            eliminarDuplicados "ventas.json"
-            menuProcesamiento
+            ventasSinDup <- eliminarDuplicados ventas
+            menuProcesamiento ventasSinDup
 
         "6" -> do
-            putStrLn "\n.."
-            
+            putStrLn "\nSaliendo del menú de procesamiento..."
+            return ventas
 
         _   -> do
             putStrLn "\nXXX Opción inválida. Intente de nuevo. XXX"
-            menuProcesamiento 
+            menuProcesamiento ventas
 
-menuCompletarDatos :: IO ()
-menuCompletarDatos = do
-    putStrLn "\n--- PROCESAMIENTO DE DATOS ---"
+
+menuCompletarDatos :: [Venta] -> IO [Venta]
+menuCompletarDatos ventas = do
+    putStrLn "\n--- Completar datos faltantes ---"
     putStrLn "1. Moda"
     putStrLn "2. Media"
-    putStrLn "3. Mendiana"
+    putStrLn "3. Mediana"
     putStrLn "6. Salir"
     putStr   "Seleccione una opción: "
     hFlush stdout
     opcion <- getLine
     case opcion of
         "1" -> do
-            putStrLn "\n--- Completar por la moda seleccionado ---"
- 
-            contenido <- B.readFile "ventas.json"
-            let ventas = case decode contenido :: Maybe [Venta] of
-                            Just v -> v
-                            Nothing -> []
-
             let (modaCant, modaPrecio) = calcularModaCantidadPrecio ventas
+            let (ventasMod, idsMod) = modificarVentas modaCant modaPrecio ventas
+            reportarModificaciones idsMod
+            return ventasMod
 
-            let (ventasMod, idsModificados) = modificarVentas modaCant modaPrecio ventas
-
-            let archivoTemp = "temp.json"
-            B.writeFile archivoTemp (encode ventasMod)
-            removeFile "ventas.json"
-            renameFile archivoTemp "ventas.json"
-
-            if null idsModificados
-            then putStrLn "No se modificaron registros."
-            else putStrLn $ "Ventas modificadas. IDs: " ++ show idsModificados
-
-            menuCompletarDatos
         "2" -> do
-            putStrLn "\n--- Completar por la media seleccionado ---"
-            
-            contenido <- B.readFile "ventas.json"
-            let ventas = case decode contenido :: Maybe [Venta] of
-                            Just v -> v
-                            Nothing -> []
-
             let (mediaCant, mediaPrecio) = calcularMediaCantidadPrecio ventas
-
-            let (ventasMod, idsModificados) = modificarVentas mediaCant mediaPrecio ventas
-
-            let archivoTemp = "temp.json"
-            B.writeFile archivoTemp (encode ventasMod)
-            removeFile "ventas.json"
-            renameFile archivoTemp "ventas.json"
-
-            if null idsModificados
-            then putStrLn "No se modificaron registros."
-            else putStrLn $ "Ventas modificadas. IDs: " ++ show idsModificados
-
+            let (ventasMod, idsMod) = modificarVentas mediaCant mediaPrecio ventas
+            reportarModificaciones idsMod
+            return ventasMod
 
         "3" -> do
-            putStrLn "\n--- Completar por el mediana seleccionado ---"
-
-            contenido <- B.readFile "ventas.json"
-            let ventas = case decode contenido :: Maybe [Venta] of
-                            Just v -> v
-                            Nothing -> []
-
             let (medianaCant, medianaPrecio) = calcularMedianaCantidadPrecio ventas
+            let (ventasMod, idsMod) = modificarVentas medianaCant medianaPrecio ventas
+            reportarModificaciones idsMod
+            return ventasMod
 
-            let (ventasMod, idsModificados) = modificarVentas medianaCant medianaPrecio ventas
-
-            let archivoTemp = "temp.json"
-            B.writeFile archivoTemp (encode ventasMod)
-            removeFile "ventas.json"
-            renameFile archivoTemp "ventas.json"
-
-            if null idsModificados
-            then putStrLn "No se modificaron registros."
-            else putStrLn $ "Ventas modificadas. IDs: " ++ show idsModificados
-            menuCompletarDatos
-
-        "6" -> do
-            putStrLn "\n.."
-
+        "6" -> return ventas
         _   -> do
-            putStrLn "\nXXX Opción inválida. Intente de nuevo. XXX"
-            menuCompletarDatos 
+            putStrLn "Opción inválida."
+            menuCompletarDatos ventas
 
-
--- Eliminr Duplicados
-eliminarDuplicados :: FilePath -> IO [Int]
-eliminarDuplicados ruta = do
-    contenido <- B.readFile ruta
-    let ventas = case decode contenido :: Maybe [Venta] of
-                    Just v  -> v
-                    Nothing -> []
+-- Funcion para eliminar duplicados
+-- Entradas: lista de ventas
+-- Salida: nueva lista de ventas sin duplicados
+-- Restricciones: lo duplicados se identifican por venta_id
+eliminarDuplicados :: [Venta] -> IO [Venta]
+eliminarDuplicados ventas = do
     let (ventasUnicas, idsEliminados, _) = foldl' procesar ([], Set.empty, Set.empty) ventas
-    let archivoTemp = "temp.json"
-    B.writeFile archivoTemp (encode ventasUnicas)
-    removeFile ruta
-    renameFile archivoTemp ruta
     putStrLn "\nDuplicados eliminados con éxito."
     if null (Set.toList idsEliminados)
         then putStrLn "No se encontraron registros duplicados."
         else putStrLn $ "Registros eliminados: " ++ show (Set.toList idsEliminados)
-    return (Set.toList idsEliminados)
+    return ventasUnicas
   where
     procesar (acumVentas, elimIds, idsVistos) venta
       | venta_id venta `Set.member` idsVistos =
@@ -167,66 +88,69 @@ eliminarDuplicados ruta = do
       | otherwise =
           (acumVentas ++ [venta], elimIds, Set.insert (venta_id venta) idsVistos)
 
-
+-- Funcion modificar ventas con datos faltantes
+-- Entradas: valor para cantidad, valor para precio_unitario, lista de ventas
+-- Salida: nueva lista de ventas con datos completados, lista de ids modificados
 modificarVentas :: Int -> Double -> [Venta] -> ([Venta], [Int])
 modificarVentas valorCantidad valorPrecio ventas =
     foldl modificar ([], []) ventas
   where
-    modificar (acumVentas, ids) v
+    modificar (acum, ids) v
       | cantidad v == 0 || precio_unitario v == 0 =
-          let nuevaVenta = v { cantidad = valorCantidad
-                             , precio_unitario = valorPrecio
-                             , total = fromIntegral valorCantidad * valorPrecio }
-          in (acumVentas ++ [nuevaVenta], ids ++ [venta_id v])
-      | otherwise = (acumVentas ++ [v], ids)
+          let nueva = v { cantidad = valorCantidad
+                        , precio_unitario = valorPrecio
+                        , total = fromIntegral valorCantidad * valorPrecio }
+          in (acum ++ [nueva], ids ++ [venta_id v])
+      | otherwise = (acum ++ [v], ids)
 
+-- reporta cuales fueron las ventas modificadas
+reportarModificaciones :: [Int] -> IO ()
+reportarModificaciones ids
+  | null ids = putStrLn "No se modificaron registros."
+  | otherwise = putStrLn $ "Ventas modificadas. IDs: " ++ show ids
 
-moda :: (Ord a) => [a] -> a
-moda xs =
-  let freqMap = Map.fromListWith (+) [(x,1) | x <- xs]
-  in fst $ maximumBy (comparing snd) (Map.toList freqMap)
-
--- Calcula la moda
+-- Funcion calcular de moda
+-- Entradas: lista de ventas
+-- Salida: tupla con (moda cantidad, moda precio_unitario)
+-- Restricciones: se ignoran ceros (es decir las ventas a las cuales se va a cambiar el valor después)
 calcularModaCantidadPrecio :: [Venta] -> (Int, Double)
-calcularModaCantidadPrecio ventas =
-    let cantidadesValidas = [cantidad v | v <- ventas, cantidad v /= 0]
-        preciosValidos    = [precio_unitario v | v <- ventas, precio_unitario v /= 0]
-        modaCantidad = moda cantidadesValidas
-        modaPrecio   = moda preciosValidos
-    in (modaCantidad, modaPrecio)
+calcularModaCantidadPrecio ventas = 
+    let moda xs = fst $ maximumBy (comparing snd) $ Map.toList $ Map.fromListWith (+) [(x,1) | x <- xs]
+        cantidades = [cantidad v | v <- ventas, cantidad v /= 0]
+        precios    = [precio_unitario v | v <- ventas, precio_unitario v /= 0]
+    in (moda cantidades, moda precios)
 
+
+-- Funcion calcular de media (promedio)
+-- Entradas: lista de ventas
+-- Salida: tupla con (promedio cantidad, promedio precio_unitario)
+-- Restricciones: se ignoran ceros (es decir las ventas a las cuales se va a cambiar el valor después)
 calcularMediaCantidadPrecio :: [Venta] -> (Int, Double)
 calcularMediaCantidadPrecio ventas =
-    let cantidadesValidas = [cantidad v | v <- ventas, cantidad v /= 0]
-        preciosValidos    = [precio_unitario v | v <- ventas, precio_unitario v /= 0]
+    let cant = [cantidad v | v <- ventas, cantidad v /= 0]
+        prec = [precio_unitario v | v <- ventas, precio_unitario v /= 0]
+        mediaC = if null cant then 0 else round $ fromIntegral (sum cant) / fromIntegral (length cant)
+        mediaP = if null prec then 0 else sum prec / fromIntegral (length prec)
+    in (mediaC, mediaP)
 
-        mediaCantidad = if null cantidadesValidas
-                        then 0
-                        else round $ fromIntegral (sum cantidadesValidas) / fromIntegral (length cantidadesValidas)
-
-        mediaPrecio   = if null preciosValidos
-                        then 0
-                        else sum preciosValidos / fromIntegral (length preciosValidos)
-    in (mediaCantidad, mediaPrecio)
-
-
+-- Funcion calcular de mediana
+-- Entradas: lista de ventas
+-- Salida: tupla con (mediana cantidad, mediana precio_unitario)
+-- Restricciones: se ignoran ceros (es decir las ventas a las cuales se va a cambiar el valor después)
 calcularMedianaCantidadPrecio :: [Venta] -> (Int, Double)
 calcularMedianaCantidadPrecio ventas =
-    let cantidadesValidas = sort [cantidad v | v <- ventas, cantidad v /= 0]
-        preciosValidos    = sort [precio_unitario v | v <- ventas, precio_unitario v /= 0]
-
+    let cant = sort [cantidad v | v <- ventas, cantidad v /= 0]
+        prec = sort [precio_unitario v | v <- ventas, precio_unitario v /= 0]
         mediana xs
           | null xs   = 0
           | odd n     = xs !! (n `div` 2)
           | otherwise = let mid = n `div` 2
-                        in round $ (fromIntegral (xs !! (mid - 1) + xs !! mid)) / 2
+                        in round $ (fromIntegral (xs !! (mid-1) + xs !! mid)) / 2
           where n = length xs
-
-        medianaCantidad = mediana cantidadesValidas
-        medianaPrecio   = if null preciosValidos
-                          then 0
-                          else let n = length preciosValidos
-                               in if odd n
-                                  then preciosValidos !! (n `div` 2)
-                                  else (preciosValidos !! (n `div` 2 - 1) + preciosValidos !! (n `div` 2)) / 2
-    in (medianaCantidad, medianaPrecio)
+        medC = mediana cant
+        medP = if null prec
+               then 0
+               else let n = length prec
+                    in if odd n then prec !! (n `div` 2)
+                       else (prec !! (n `div` 2 -1) + prec !! (n `div` 2)) / 2
+    in (medC, medP)

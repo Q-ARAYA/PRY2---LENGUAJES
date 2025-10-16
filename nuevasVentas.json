@@ -5,9 +5,9 @@
 "producto_id": 109,
 "producto_nombre": "Camara",
 "categoria": "Electronica",
-"cantidad": 2,
-"precio_unitario": 250.0,
-"total": 500.0
+"cantidad": 5,
+"precio_unitario": 2500,
+"total": 12500.00
 },
 {
 "venta_id": 2,
@@ -15,8 +15,8 @@
 "producto_id": 106,
 "producto_nombre": "Telefono",
 "categoria": "Electronica",
-"cantidad": 1,
-"precio_unitario": 500.0,
-"total": 500.0
+"cantidad": 0,
+"precio_unitario": 0,
+"total": 0
 }
 ]

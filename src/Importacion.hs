@@ -13,7 +13,7 @@ import GHC.Generics
 import qualified Data.ByteString.Lazy as B
 import Control.Monad (when)
 
--- Se define el tipo de venta
+-- se define el tipo de venta
 data Venta = Venta
   { venta_id :: Int
   , fecha :: String
