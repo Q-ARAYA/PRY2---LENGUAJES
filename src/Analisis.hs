@@ -17,7 +17,7 @@ menuAnalisis ventas = do
     putStrLn "1. Total de ventas"
     putStrLn "2. Total de ventas mensual y anual"
     putStrLn "3. Promedio de ventas por categoría por año"
-    putStrLn "6. Salir"
+    putStrLn "7. Volver"
     putStr   "Seleccione una opción: "
     hFlush stdout
     opcion <- getLine
@@ -37,8 +37,8 @@ menuAnalisis ventas = do
             promedioVentasPorCategoriaPorAnio ventas
             menuAnalisis ventas
 
-        "6" -> do
-            putStrLn "\nSaliendo del menú de análisis..."
+        "7" -> do
+            putStrLn "\n.."
 
         _   -> do
             putStrLn "\nXXX Opción inválida. Intente de nuevo. XXX"

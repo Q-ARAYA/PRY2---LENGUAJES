@@ -13,7 +13,7 @@ menuProcesamiento ventas = do
     putStrLn "\n--- PROCESAMIENTO DE DATOS ---"
     putStrLn "1. Completar datos faltantes"
     putStrLn "2. Eliminar duplicados"
-    putStrLn "6. Salir"
+    putStrLn "7. Volver"
     putStr   "Seleccione una opción: "
     hFlush stdout
     opcion <- getLine
@@ -26,8 +26,8 @@ menuProcesamiento ventas = do
             ventasSinDup <- eliminarDuplicados ventas
             menuProcesamiento ventasSinDup
 
-        "6" -> do
-            putStrLn "\nSaliendo del menú de procesamiento..."
+        "7" -> do
+            putStrLn "\n.."
             return ventas
 
         _   -> do
@@ -41,7 +41,7 @@ menuCompletarDatos ventas = do
     putStrLn "1. Moda"
     putStrLn "2. Media"
     putStrLn "3. Mediana"
-    putStrLn "6. Salir"
+    putStrLn "7. Volver"
     putStr   "Seleccione una opción: "
     hFlush stdout
     opcion <- getLine
@@ -64,9 +64,12 @@ menuCompletarDatos ventas = do
             reportarModificaciones idsMod
             return ventasMod
 
-        "6" -> return ventas
+        "7" -> do
+            putStrLn "\n.."
+            return ventas
+
         _   -> do
-            putStrLn "Opción inválida."
+            putStrLn "\nXXX Opción inválida. Intente de nuevo. XXX"
             menuCompletarDatos ventas
 
 -- Funcion para eliminar duplicados

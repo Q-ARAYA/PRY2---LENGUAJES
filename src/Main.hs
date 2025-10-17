@@ -6,9 +6,12 @@ import System.IO (hFlush, stdout)
 import qualified Data.ByteString.Lazy as B
 import Data.Aeson (encode, decode)
 import System.Directory (doesFileExist, renameFile)
+import Data.Time (parseTimeM, defaultTimeLocale, Day)
+
 import Importacion (Venta(..), importarVentas)
 import Procesamiento (menuProcesamiento)
-import Analisis (menuAnalisis)
+import Analisis (menuAnalisis, redondear2dec)
+import Estadisticas (menuEstadisticas)
 
 main :: IO ()
 main = do
@@ -65,12 +68,12 @@ menuLoop ventas = do
 
         "5" -> do
             putStrLn "\n--- Búsqueda de ventas ---"
-            -- busquedaVentas ventas
+            buscarVentasPorRango ventas
             menuLoop ventas
 
         "6" -> do
             putStrLn "\n--- Estadísticas ---"
-            -- estadisticasMenu ventas
+            menuEstadisticas ventas
             menuLoop ventas
 
         "7" -> do
@@ -91,14 +94,15 @@ imprimirVentas ventas = do
   if null ventas
     then putStrLn "No hay ventas cargadas."
     else mapM_ (\v -> putStrLn $
-         "ID: " ++ show (venta_id v)
-      ++ " | Fecha: " ++ fecha v
-      ++ " | Producto ID: " ++ show (producto_id v)
-      ++ " | Nombre: " ++ producto_nombre v
-      ++ " | Categoría: " ++ categoria v
-      ++ " | Cantidad: " ++ show (cantidad v)
-      ++ " | Precio Unitario: " ++ show (precio_unitario v)
-      ++ " | Total: " ++ show (total v)
+        "ID: " ++ show (venta_id v) ++ 
+        " | Fecha: " ++ fecha v ++ 
+        " | Producto ID: " ++ show (producto_id v) ++ 
+        " | Nombre: " ++ producto_nombre v ++ 
+        " | Categoría: " ++ categoria v ++ 
+        " | Cantidad: " ++ show (cantidad v) ++ 
+        " | Precio Unitario: " ++ show (precio_unitario v) ++ 
+        " | Total: " ++ show (total v)
+
       ) ventas
   putStrLn "------------------------\n"
 
@@ -124,3 +128,56 @@ cargarVentas = do
           putStrLn "Error al leer ventas.json. Archivo corrupto o mal formado."
           return []
         Just ventas -> return ventas
+
+-- Funcion para buscar ventas por rango de fechas
+-- Entradas: lista de ventas
+-- Salida: Imprime las ventas dentro del rango especificado y el total
+-- Restricciones: Se asume que las fechas estan en formato "YYYY-MM-DD"
+buscarVentasPorRango :: [Venta] -> IO ()
+buscarVentasPorRango ventas = do
+    putStr "Ingrese la fecha inicial (YYYY-MM-DD): "
+    hFlush stdout
+    fechaInicio <- getLine
+
+    putStr "Ingrese la fecha final (YYYY-MM-DD): "
+    hFlush stdout
+    fechaFin <- getLine
+
+    let entradaInicio = convertirATipoDay fechaInicio
+        entradaFin    = convertirATipoDay fechaFin
+
+    case (entradaInicio, entradaFin) of
+        (Just inicio, Just fin) -> do
+            let ventasFiltradas = filtrarPorRango inicio fin ventas
+            if null ventasFiltradas
+                then putStrLn "\nNo se encontraron ventas en el rango especificado."
+                else do
+                    putStrLn "\nVentas en el rango seleccionado:\n"
+                    mapM_ imprimirVentaPorRango ventasFiltradas
+                    let totalRango = sum [ total v | v <- ventasFiltradas ]
+                    putStrLn $ "\nTotal de ventas en el rango: $" ++ show (redondear2dec totalRango)
+        _ -> putStrLn "\nFormato de fecha inválido. Use el formato YYYY-MM-DD."
+
+-- Convierte un string "YYYY-MM-DD" a tipo Day
+convertirATipoDay :: String -> Maybe Day
+convertirATipoDay = parseTimeM True defaultTimeLocale "%Y-%m-%d"
+
+-- Filtra las ventas dentro del rango
+filtrarPorRango :: Day -> Day -> [Venta] -> [Venta]
+filtrarPorRango inicio fin = filter (\v ->
+    case convertirATipoDay (fecha v) of
+        Just f  -> f >= inicio && f <= fin
+        Nothing -> False
+    )
+
+imprimirVentaPorRango :: Venta -> IO ()
+imprimirVentaPorRango v = putStrLn $
+    "ID: " ++ show (venta_id v) ++ 
+    " | Fecha: " ++ fecha v ++ 
+    " | Producto ID: " ++ show (producto_id v) ++ 
+    " | Nombre: " ++ producto_nombre v ++ 
+    " | Categoría: " ++ categoria v ++ 
+    " | Cantidad: " ++ show (cantidad v) ++ 
+    " | Precio Unitario: " ++ show (precio_unitario v) ++ 
+    " | Total: " ++ show (total v)
+

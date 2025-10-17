@@ -73,6 +73,7 @@ executable MiProyecto
                      , directory
                      , text
                      , containers
+                     , time
 
     -- Directories containing source files.
     hs-source-dirs:   src
