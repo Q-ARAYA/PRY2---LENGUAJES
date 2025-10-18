@@ -12,6 +12,8 @@ import Data.Aeson
 import GHC.Generics
 import qualified Data.ByteString.Lazy as B
 import Control.Monad (when)
+import Data.List (partition)
+
 
 -- se define el tipo de venta
 data Venta = Venta
@@ -50,9 +52,21 @@ importarVentas archivoEntrada ventasExistentes = do
           return ventasExistentes
         Just nuevas -> do
           let (validas, invalidas) = validarVentas nuevas
-              ventasActualizadas = ventasExistentes ++ validas
 
-          putStrLn $ "\nSe agregaron " ++ show (length validas) ++ " ventas válidas."
+          -- Filtra las que ya existen en memoria (opcional)
+          let idsExistentes = map venta_id ventasExistentes
+              (repetidas, nuevasValidas) = partition (\v -> venta_id v `elem` idsExistentes) validas
+
+          -- Crear la nueva lista final
+          let ventasActualizadas = ventasExistentes ++ nuevasValidas
+
+          -- Reportes al usuario
+          putStrLn $ "\nSe agregaron " ++ show (length nuevasValidas) ++ " ventas válidas nuevas."
+
+          when (not (null repetidas)) $ do
+            putStrLn $ "\nSe encontraron " ++ show (length repetidas) ++ " ventas repetidas (ya estaban en memoria):"
+            mapM_ (\v -> putStrLn $ "  - Venta con ID " ++ show (venta_id v) ++ " no se agregó por duplicado.") repetidas
+
           when (not (null invalidas)) $ do
             putStrLn $ "\nSe encontraron " ++ show (length invalidas) ++ " registros inválidos:\n"
             mapM_ reportarErrorVenta invalidas

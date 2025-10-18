@@ -18,5 +18,35 @@
 "cantidad": 0,
 "precio_unitario": 0,
 "total": 0
+},
+{
+"venta_id": 9,
+"fecha": "",
+"producto_id": 106,
+"producto_nombre": "Telefono",
+"categoria": "Electronica",
+"cantidad": 0,
+"precio_unitario": 0,
+"total": 0
+},
+{
+"venta_id": 5,
+"fecha": "2025-01-12",
+"producto_id": 105,
+"producto_nombre": "Sartén",
+"categoria": "Cocina",
+"cantidad": 0,
+"precio_unitario": 0,
+"total": 0
+},
+{
+"venta_id": 5,
+"fecha": "2025-01-12",
+"producto_id": 106,
+"producto_nombre": "Olla a Presión",
+"categoria": "Cocina",
+"cantidad": 0,
+"precio_unitario": 0,
+"total": 0
 }
 ]

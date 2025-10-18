@@ -1,1 +1,52 @@
-[{"cantidad":2,"categoria":"Electronica","fecha":"2025-10-08","precio_unitario":250,"producto_id":109,"producto_nombre":"Camara","total":500,"venta_id":1},{"cantidad":1,"categoria":"Electronica","fecha":"2023-01-12","precio_unitario":500,"producto_id":106,"producto_nombre":"Telefono","total":500,"venta_id":2}]
+[
+    {
+        "cantidad": 2,
+        "categoria": "Electronica",
+        "fecha": "2025-04-08",
+        "precio_unitario": 250,
+        "producto_id": 101,
+        "producto_nombre": "Camara",
+        "total": 500,
+        "venta_id": 1
+    },
+    {
+        "cantidad": 2,
+        "categoria": "Electronica",
+        "fecha": "2025-01-12",
+        "precio_unitario": 500,
+        "producto_id": 102,
+        "producto_nombre": "Telefono",
+        "total": 1000,
+        "venta_id": 2
+    },
+    {
+        "cantidad": 1,
+        "categoria": "Hogar",
+        "fecha": "2023-01-12",
+        "precio_unitario": 10000,
+        "producto_id": 103,
+        "producto_nombre": "Sillón",
+        "total": 10000,
+        "venta_id": 3
+    },
+    {
+        "cantidad": 1,
+        "categoria": "Hogar",
+        "fecha": "2023-04-12",
+        "precio_unitario": 5500,
+        "producto_id": 104,
+        "producto_nombre": "cama",
+        "total": 11000,
+        "venta_id": 4
+    },
+    {
+        "cantidad": 1,
+        "categoria": "Cocina",
+        "fecha": "2025-01-12",
+        "precio_unitario": 5500,
+        "producto_id": 105,
+        "producto_nombre": "Sartén",
+        "total": 5500,
+        "venta_id": 5
+    }
+]
