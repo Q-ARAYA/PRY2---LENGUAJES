@@ -12,6 +12,16 @@ import Importacion (Venta(..), importarVentas)
 import Procesamiento (menuProcesamiento)
 import Analisis (menuAnalisis, redondear2dec)
 import Estadisticas (menuEstadisticas)
+import Temporal (menuTemporal)
+
+pausa :: IO ()
+pausa = do
+    putStrLn "\nPresione Enter para continuar..."
+    _ <- getLine
+    return ()
+
+limpiarTerminal :: IO ()
+limpiarTerminal = putStr "\ESC[2J\ESC[H"
 
 main :: IO ()
 main = do
@@ -26,6 +36,7 @@ main = do
 
 menuLoop :: [Venta] -> IO ()
 menuLoop ventas = do
+    limpiarTerminal
     putStrLn "\n--- MENÚ PRINCIPAL ---"
     putStrLn "1. Importación de datos"
     putStrLn "2. Procesamiento de datos"
@@ -48,6 +59,7 @@ menuLoop ventas = do
             -- Llamada a importarVentas
             nuevasVentas <- importarVentas ruta ventas
             imprimirVentas nuevasVentas
+            pausa
             menuLoop nuevasVentas
 
         "2" -> do
@@ -63,7 +75,7 @@ menuLoop ventas = do
 
         "4" -> do
             putStrLn "\n--- Análisis temporal ---"
-            -- analisisTemporal ventas
+            menuTemporal ventas
             menuLoop ventas
 
         "5" -> do
@@ -180,4 +192,3 @@ imprimirVentaPorRango v = putStrLn $
     " | Cantidad: " ++ show (cantidad v) ++ 
     " | Precio Unitario: " ++ show (precio_unitario v) ++ 
     " | Total: " ++ show (total v)
-

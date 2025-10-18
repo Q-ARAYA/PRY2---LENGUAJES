@@ -7,9 +7,18 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Importacion (Venta(..))
 
+pausa :: IO ()
+pausa = do
+    putStrLn "\nPresione Enter para continuar..."
+    _ <- getLine
+    return ()
+
+limpiarTerminal :: IO ()
+limpiarTerminal = putStr "\ESC[2J\ESC[H"
 
 menuProcesamiento :: [Venta] -> IO [Venta]
 menuProcesamiento ventas = do
+    limpiarTerminal
     putStrLn "\n--- PROCESAMIENTO DE DATOS ---"
     putStrLn "1. Completar datos faltantes"
     putStrLn "2. Eliminar duplicados"
@@ -20,10 +29,12 @@ menuProcesamiento ventas = do
     case opcion of
         "1" -> do
             ventasMod <- menuCompletarDatos ventas
+            pausa
             menuProcesamiento ventasMod
 
         "2" -> do
             ventasSinDup <- eliminarDuplicados ventas
+            pausa
             menuProcesamiento ventasSinDup
 
         "7" -> do

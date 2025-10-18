@@ -10,9 +10,18 @@ import Data.Ord (Down(..))
 import GHC.Generics (Generic)
 import Importacion (Venta(..))
 
+pausa :: IO ()
+pausa = do
+    putStrLn "\nPresione Enter para continuar..."
+    _ <- getLine
+    return ()
+
+limpiarTerminal :: IO ()
+limpiarTerminal = putStr "\ESC[2J\ESC[H"
 
 menuAnalisis :: [Venta] -> IO ()
 menuAnalisis ventas = do
+    limpiarTerminal
     putStrLn "\n--- ANALISIS DE DATOS ---"
     putStrLn "1. Total de ventas"
     putStrLn "2. Total de ventas mensual y anual"
@@ -25,16 +34,19 @@ menuAnalisis ventas = do
         "1" -> do
             putStrLn "\n--- Total de ventas ---"
             totalVentas ventas
+            pausa
             menuAnalisis ventas
 
         "2" -> do
             putStrLn "\n--- Total de ventas mensual y anual ---"
             totalVentasMensualYAnual ventas
+            pausa
             menuAnalisis ventas
         
         "3" -> do
             putStrLn "\n--- Promedio de ventas por categoría por año ---"
             promedioVentasPorCategoriaPorAnio ventas
+            pausa
             menuAnalisis ventas
 
         "7" -> do

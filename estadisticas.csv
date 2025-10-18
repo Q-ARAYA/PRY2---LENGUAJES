@@ -1,0 +1,15 @@
+Resumen general
+Tipo de reporte: Resumen general
+
+Cantidad de ventas por categoria:
+Categoria,Cantidad
+Electronica | 2
+
+Venta mas alta y mas baja:
+Tipo,Producto,Total
+Mas baja,Camara | 500.0
+Mas alta,Telefono | 500.0
+
+Categoria con mayor variedad:
+Categor¡a,Variedad
+Electronica | 2

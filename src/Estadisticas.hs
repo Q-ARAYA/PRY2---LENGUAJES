@@ -12,8 +12,18 @@ import Data.Ord (Down(..))
 import Importacion (Venta(..))
 import Analisis (redondear2dec)
 
+pausa :: IO ()
+pausa = do
+    putStrLn "\nPresione Enter para continuar..."
+    _ <- getLine
+    return ()
+
+limpiarTerminal :: IO ()
+limpiarTerminal = putStr "\ESC[2J\ESC[H"
+
 menuEstadisticas :: [Venta] -> IO ()
 menuEstadisticas ventas = do
+    limpiarTerminal
     putStrLn "\n--- ESTADISTICAS ---"
     putStrLn "1. Categorías con mayores ventas"
     putStrLn "2. Producto más vendido"
@@ -28,21 +38,25 @@ menuEstadisticas ventas = do
         "1" -> do
             putStrLn "\n--- Categorías con mayores ventas ---"
             topCategoriasVentas ventas
+            pausa
             menuEstadisticas ventas
 
         "2" -> do
             putStrLn "\n--- Producto más vendido ---"
             productoMasVendido ventas
+            pausa
             menuEstadisticas ventas
 
         "3" -> do
             putStrLn "\n--- Categoría con menor participación ---"
             categoriaMenorParticipacion ventas
+            pausa
             menuEstadisticas ventas
 
         "4" -> do
             putStrLn "\n--- Resumen general ---"
             resumenGeneral ventas
+            pausa
             menuEstadisticas ventas
 
         "7" -> do
@@ -58,17 +72,16 @@ menuEstadisticas ventas = do
 -- Salida: Imprime el top 5 de categorías con mayores ventas
 topCategoriasVentas :: [Venta] -> IO ()
 topCategoriasVentas ventas = do
-    -- Agrupar las ventas por categoría y sumar montos
     let ventasPorCategoria = Map.toList $
             Map.fromListWith (+) [ (categoria v, total v) | v <- ventas ]
-
-        -- Ordenae de mayor a menor
         ordenadas = take 5 $ sortOn (Down . snd) ventasPorCategoria
+        lineas = [cat ++ " | " ++ show (redondear2dec monto) | (cat, monto) <- ordenadas]
 
-    putStrLn "\n--- Top 5 de categorías con mayores ventas ---"
     mapM_ (\(cat, monto) ->
-        putStrLn $ "- " ++ cat ++ ": $" ++ show (redondear2dec monto)
+        putStrLn $ "    - " ++ cat ++ ": $" ++ show (redondear2dec monto)
         ) ordenadas
+
+    guardarCSV "Top Categorias con mayores ventas" ("Categoria | Monto" : lineas)
 
 -- Función para obtener el producto más vendido
 -- Entradas: lista de ventas
@@ -78,7 +91,6 @@ productoMasVendido ventas = do
     let ventasPorProductoMap = Map.fromListWith
             (\(nombre1, cant1) (_, cant2) -> (nombre1, cant1 + cant2))
             [ (producto_id v, (producto_nombre v, cantidad v)) | v <- ventas ]
-
         ventasPorProducto = Map.toList ventasPorProductoMap
         ordenadas = sortOn (Down . (\(_, (_, cant)) -> cant)) ventasPorProducto
 
@@ -86,76 +98,102 @@ productoMasVendido ventas = do
         then putStrLn "\nNo hay ventas registradas."
         else do
             let (pid, (pname, cantTotal)) = head ordenadas
-            putStrLn "\n--- Producto más vendido ---"
-            putStrLn $ "- Producto Id: " ++ show pid
-            putStrLn $ "- Producto: " ++ pname
-            putStrLn $ "- Cantidad total vendida: " ++ show cantTotal
+            let lineas = [show pid ++ " | " ++ pname ++ " | " ++ show cantTotal]
+            putStrLn $ "    - Producto Id: " ++ show pid
+            putStrLn $ "    - Producto: " ++ pname
+            putStrLn $ "    - Cantidad total vendida: " ++ show cantTotal
+            guardarCSV "Producto mas vendido" ("Id | Nombre | Cantidad" : lineas)
 
 -- funcion que obtiene categoria con menor participación
 --Entradsas: lista de ventas
 -- Salida: Imprime la categoria con menor participación
 categoriaMenorParticipacion :: [Venta] -> IO ()
 categoriaMenorParticipacion ventas = do
-    -- Agrupar las ventas por categoría y sumar las cantidades
     let cantidadesPorCategoria = Map.toList $
             Map.fromListWith (+) [ (categoria v, cantidad v) | v <- ventas ]
-
     if null cantidadesPorCategoria
         then putStrLn "\nNo hay ventas registradas."
         else do
-            -- Buscar la categoría con menor cantidad total
             let (cat, cant) = head $ sortOn snd cantidadesPorCategoria
+            let lineas = [cat ++ " | " ++ show cant]
+            putStrLn $ "    - Categoria: " ++ cat
+            putStrLn $ "    - Cantidad total vendida: " ++ show cant
+            guardarCSV "Categoria con menor participacion" ("Categoria | Cantidad" : lineas)
 
-            putStrLn "\n--- Categoría con menor participación ---"
-            putStrLn $ "- Categoría: " ++ cat
-            putStrLn $ "- Cantidad total vendida: " ++ show cant
 
 -- Función cantidad de ventas por categoría
 -- Entradas: lista de ventas
 -- Salida: Imprime la cantidad de ventas por categoría
-cantidadVentasPorCategoria :: [Venta] -> IO ()
+cantidadVentasPorCategoria :: [Venta] -> IO [String]
 cantidadVentasPorCategoria ventas = do
+    putStrLn "\nCantidad de ventas por categoría:"
     let conteo = Map.toList $
             Map.fromListWith (+) [ (categoria v, 1) | v <- ventas ]
-    putStrLn "\n-----Cantidad de ventas por categoría-----"
-    mapM_ (\(cat, n) -> putStrLn $ "- " ++ cat ++ ": " ++ show n ++ " ventas") conteo
+        lineas = [cat ++ " | " ++ show n | (cat, n) <- conteo]
+    mapM_ (\(cat, n) -> putStrLn $ "    - " ++ cat ++ ": " ++ show n ++ " ventas") conteo
+    return lineas
+
 
 -- Funcion venta mas alta y mas baja
 -- Entradas: lista de ventas
 -- Salida: Imprime la venta mas alta y la más baja
-ventaMasAltaYMasBaja :: [Venta] -> IO ()
+ventaMasAltaYMasBaja :: [Venta] -> IO [String]
 ventaMasAltaYMasBaja ventas =
     if null ventas
-        then putStrLn "\nNo hay ventas registradas."
+        then do
+            putStrLn "\nNo hay ventas registradas."
+            return []
         else do
+            putStrLn "\nVenta más alta y más baja:"
             let ordenadas = sortOn total ventas
                 menor = head ordenadas
                 mayor = last ordenadas
-            putStrLn "\n-----Venta más baja-----"
-            putStrLn $ "- Producto: " ++ producto_nombre menor ++ " | Total: $" ++ show (redondear2dec $ total menor)
-            putStrLn "\n-----Venta más alta-----"
-            putStrLn $ "- Producto: " ++ producto_nombre mayor ++ " | Total: $" ++ show (redondear2dec $ total mayor)
+                lineas = [ "Mas baja," ++ producto_nombre menor ++ " | " ++ show (redondear2dec $ total menor)
+                         , "Mas alta," ++ producto_nombre mayor ++ " | " ++ show (redondear2dec $ total mayor)
+                         ]
+            putStrLn $ "    - Producto mas bajo: " ++ producto_nombre menor ++ " | Total: $" ++ show (redondear2dec $ total menor)
+            putStrLn $ "    - Producto mas alto: " ++ producto_nombre mayor ++ " | Total: $" ++ show (redondear2dec $ total mayor)
+            return lineas
 
 -- Funcion categoria con mayor variedad de productos vendidos
 -- Entradas: lista de ventas
 -- Salida: Imprime la categoria con mayor variedad de productos vendidos
-categoriaMayorVariedad :: [Venta] -> IO ()
+categoriaMayorVariedad :: [Venta] -> IO [String]
 categoriaMayorVariedad ventas = do
     let productosPorCategoria = Map.fromListWith (\a b -> a ++ b)
             [ (categoria v, [producto_id v]) | v <- ventas ]
         variedad = [ (cat, length (unique prods)) | (cat, prods) <- Map.toList productosPorCategoria ]
             where unique = map head . group . sort
-
     if null variedad
-        then putStrLn "\nNo hay ventas registradas."
+        then do
+            putStrLn "\nNo hay ventas registradas."
+            return []
         else do
+            putStrLn "\nCategoría con mayor variedad de productos vendidos:"
             let (catMax, cantProd) = last $ sortOn snd variedad
-            putStrLn "\n-----Categoría con mayor variedad de productos vendidos-----"
-            putStrLn $ "- Categoría: " ++ catMax
-            putStrLn $ "- Variedad de productos: " ++ show cantProd
+            putStrLn $ "    - Categoria: " ++ catMax
+            putStrLn $ "    - Variedad de productos: " ++ show cantProd
+            return [catMax ++ " | " ++ show cantProd]
 
 resumenGeneral :: [Venta] -> IO ()
 resumenGeneral ventas = do
-    cantidadVentasPorCategoria ventas
-    ventaMasAltaYMasBaja ventas
-    categoriaMayorVariedad ventas
+    lineas1 <- cantidadVentasPorCategoria ventas
+    lineas2 <- ventaMasAltaYMasBaja ventas
+    lineas3 <- categoriaMayorVariedad ventas
+    let todas = ["Tipo de reporte: Resumen general",
+                 "",
+                 "Cantidad de ventas por categoria:",
+                 "Categoria,Cantidad"]
+                 ++ lineas1 ++
+                 ["", "Venta mas alta y mas baja:", "Tipo,Producto,Total"]
+                 ++ lineas2 ++
+                 ["", "Categoria con mayor variedad:", "Categoría,Variedad"]
+                 ++ lineas3
+    guardarCSV "Resumen general" todas
+
+guardarCSV :: String -> [String] -> IO ()
+guardarCSV tipo lineas = do
+    let contenido = tipo : lineas  -- primera línea: tipo de estadística
+        csv = unlines contenido
+    writeFile "estadisticas.csv" csv   -- reescribe el archivo
+    putStrLn "\n[Guardado en 'estadisticas.csv']"
